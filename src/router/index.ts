@@ -1,16 +1,30 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
-import HomePage from '../views/HomePage.vue'
+import ContactList from '../views/ContactList.vue';
+import ContactDetails from '../views/ContactDetails.vue';
+import ContactForm from '../views/ContactForm.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/home'
+    redirect: '/contacts'
   },
   {
-    path: '/home',
-    name: 'Home',
-    component: HomePage
+    path: '/contacts',
+    name: 'ContactList',
+    component: ContactList
+  },
+  {
+    path: '/contact/:id',
+    name: 'ContactDetails',
+    component: ContactDetails,
+    props: true
+  },
+  {
+    path: '/contact-form/:id?',
+    name: 'ContactForm',
+    component: ContactForm,
+    props: true
   }
 ]
 
