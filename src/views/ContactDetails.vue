@@ -27,7 +27,7 @@
               {{ getInitials(contact) }}
             </div>
           </ion-avatar>
-          <h1>{{ contact.firstName }} {{ contact.lastName }}</h1>
+          <h1>{{ getDisplayName(contact) }}</h1>
         </div>
 
         <!-- Telefonnummern -->
@@ -43,14 +43,14 @@
               >
                 <ion-icon :icon="callOutline" slot="start"></ion-icon>
                 <ion-label>
-                  <h3>{{ phone.number }}</h3>
-                  <p>{{ phone.type || 'Mobil' }}</p>
+                  <h3>{{ phone.value }}</h3>
+                  <p>{{ phone.label || 'Mobil' }}</p>
                 </ion-label>
                 <ion-buttons slot="end">
-                  <ion-button fill="clear" @click="callNumber(phone.number)">
+                  <ion-button fill="clear" @click="callNumber(phone.value || '')">
                     <ion-icon :icon="callOutline"></ion-icon>
                   </ion-button>
-                  <ion-button fill="clear" @click="copyToClipboard(phone.number)">
+                  <ion-button fill="clear" @click="copyToClipboard(phone.value || '')">
                     <ion-icon :icon="copyOutline"></ion-icon>
                   </ion-button>
                 </ion-buttons>
@@ -72,14 +72,14 @@
               >
                 <ion-icon :icon="mailOutline" slot="start"></ion-icon>
                 <ion-label>
-                  <h3>{{ email.address }}</h3>
-                  <p>{{ email.type || 'Privat' }}</p>
+                  <h3>{{ email.value }}</h3>
+                  <p>{{ email.label || 'Privat' }}</p>
                 </ion-label>
                 <ion-buttons slot="end">
-                  <ion-button fill="clear" @click="sendEmail(email.address)">
+                  <ion-button fill="clear" @click="sendEmail(email.value || '')">
                     <ion-icon :icon="mailOutline"></ion-icon>
                   </ion-button>
-                  <ion-button fill="clear" @click="copyToClipboard(email.address)">
+                  <ion-button fill="clear" @click="copyToClipboard(email.value || '')">
                     <ion-icon :icon="copyOutline"></ion-icon>
                   </ion-button>
                 </ion-buttons>
@@ -95,21 +95,21 @@
           </ion-card-header>
           <ion-card-content>
             <ion-item>
-              <ion-icon :icon="cakeOutline" slot="start"></ion-icon>
+              <ion-icon :icon="giftOutline" slot="start"></ion-icon>
               <ion-label>
-                <h3>{{ formatDate(contact.birthday) }}</h3>
+                <h3>{{ formatBirthday(contact.birthday) }}</h3>
               </ion-label>
             </ion-item>
           </ion-card-content>
         </ion-card>
 
         <!-- Notizen -->
-        <ion-card v-if="contact.notes">
+        <ion-card v-if="contact.note">
           <ion-card-header>
             <ion-card-title>Notizen</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <p>{{ contact.notes }}</p>
+            <p>{{ contact.note }}</p>
           </ion-card-content>
         </ion-card>
       </div>
@@ -137,11 +137,11 @@ import {
 } from '@ionic/vue';
 import {
   createOutline, trashOutline, callOutline, mailOutline, copyOutline,
-  cakeOutline, personOutline
+  giftOutline, personOutline
 } from 'ionicons/icons';
 import { Clipboard } from '@capacitor/clipboard';
 import { useContacts } from '../composables/useContacts';
-import { Contact } from '../types/Contact';
+import type { Contact } from '@capawesome-team/capacitor-contacts';
 
 interface Props {
   id: string;
@@ -156,34 +156,53 @@ const contact = ref<Contact | undefined>();
 
 const contactId = computed(() => props.id || route.params.id as string);
 
-const getInitials = (contact: Contact): string => {
-  const first = contact.firstName.charAt(0).toUpperCase();
-  const last = contact.lastName.charAt(0).toUpperCase();
-  return `${first}${last}`;
+const getDisplayName = (contact: Contact): string => {
+  const givenName = contact.givenName || '';
+  const familyName = contact.familyName || '';
+  return `${givenName} ${familyName}`.trim() || 'Unbenannter Kontakt';
 };
 
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('de-DE');
+const getInitials = (contact: Contact): string => {
+  const givenName = contact.givenName || '';
+  const familyName = contact.familyName || '';
+  const first = givenName.charAt(0).toUpperCase();
+  const last = familyName.charAt(0).toUpperCase();
+  return first + last || '?';
+};
+
+const formatBirthday = (birthday: any): string => {
+  if (birthday.day && birthday.month) {
+    const day = birthday.day.toString().padStart(2, '0');
+    const month = birthday.month.toString().padStart(2, '0');
+    const year = birthday.year ? birthday.year : '';
+    return year ? `${day}.${month}.${year}` : `${day}.${month}`;
+  }
+  return 'Unbekannt';
 };
 
 const callNumber = (phoneNumber: string) => {
-  window.open(`tel:${phoneNumber}`, '_system');
+  if (phoneNumber) {
+    window.open(`tel:${phoneNumber}`, '_system');
+  }
 };
 
 const sendEmail = (email: string) => {
-  window.open(`mailto:${email}`, '_system');
+  if (email) {
+    window.open(`mailto:${email}`, '_system');
+  }
 };
 
 const copyToClipboard = async (text: string) => {
   try {
-    await Clipboard.write({ string: text });
-    const toast = await toastController.create({
-      message: 'In Zwischenablage kopiert',
-      duration: 2000,
-      position: 'bottom'
-    });
-    await toast.present();
+    if (text) {
+      await Clipboard.write({ string: text });
+      const toast = await toastController.create({
+        message: 'In Zwischenablage kopiert',
+        duration: 2000,
+        position: 'bottom'
+      });
+      await toast.present();
+    }
   } catch (error) {
     console.error('Fehler beim Kopieren:', error);
   }

@@ -33,7 +33,7 @@
           v-for="contact in contacts"
           :key="contact.id"
           button
-          @click="openContact(contact.id)"
+          @click="contact.id && openContact(contact.id)"
         >
           <ion-avatar slot="start">
             <div class="avatar-placeholder">
@@ -42,12 +42,12 @@
           </ion-avatar>
           
           <ion-label>
-            <h2>{{ contact.firstName }} {{ contact.lastName }}</h2>
+            <h2>{{ getDisplayName(contact) }}</h2>
             <p v-if="contact.phoneNumbers && contact.phoneNumbers.length > 0">
-              {{ contact.phoneNumbers[0].number }}
+              {{ contact.phoneNumbers[0].value }}
             </p>
             <p v-if="contact.emailAddresses && contact.emailAddresses.length > 0">
-              {{ contact.emailAddresses[0].address }}
+              {{ contact.emailAddresses[0].value }}
             </p>
           </ion-label>
 
@@ -55,7 +55,7 @@
             <ion-button 
               v-if="contact.phoneNumbers && contact.phoneNumbers.length > 0"
               fill="clear" 
-              @click.stop="callContact(contact.phoneNumbers[0].number)"
+              @click.stop="callContact(contact.phoneNumbers[0].value || '')"
             >
               <ion-icon :icon="callOutline"></ion-icon>
             </ion-button>
@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,
@@ -94,7 +94,7 @@ import {
 } from '@ionic/vue';
 import { addOutline, callOutline, peopleOutline } from 'ionicons/icons';
 import { useContacts } from '../composables/useContacts';
-import { Contact } from '../types/Contact';
+import type { Contact } from '@capawesome-team/capacitor-contacts';
 
 const router = useRouter();
 const { contacts, isLoading, searchQuery, loadContacts, setSearchQuery } = useContacts();
@@ -103,10 +103,18 @@ const onSearchInput = (event: any) => {
   setSearchQuery(event.target.value);
 };
 
+const getDisplayName = (contact: Contact): string => {
+  const givenName = contact.givenName || '';
+  const familyName = contact.familyName || '';
+  return `${givenName} ${familyName}`.trim() || 'Unbenannter Kontakt';
+};
+
 const getInitials = (contact: Contact): string => {
-  const first = contact.firstName.charAt(0).toUpperCase();
-  const last = contact.lastName.charAt(0).toUpperCase();
-  return `${first}${last}`;
+  const givenName = contact.givenName || '';
+  const familyName = contact.familyName || '';
+  const first = givenName.charAt(0).toUpperCase();
+  const last = familyName.charAt(0).toUpperCase();
+  return first + last || '?';
 };
 
 const openContact = (id: string) => {
@@ -119,7 +127,9 @@ const addContact = () => {
 
 const callContact = async (phoneNumber: string) => {
   try {
-    window.open(`tel:${phoneNumber}`, '_system');
+    if (phoneNumber) {
+      window.open(`tel:${phoneNumber}`, '_system');
+    }
   } catch (error) {
     const alert = await alertController.create({
       header: 'Fehler',

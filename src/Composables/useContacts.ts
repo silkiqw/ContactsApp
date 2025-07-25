@@ -1,6 +1,6 @@
 // src/composables/useContacts.ts
 import { ref, computed } from 'vue';
-import { Contacts, Contact, CreateContactOptions } from '@capawesome-team/capacitor-contacts';
+import { Contacts, type Contact, type CreateContactOptions } from '@capawesome-team/capacitor-contacts';
 
 const contacts = ref<Contact[]>([]);
 const isLoading = ref(false);
@@ -14,9 +14,9 @@ export function useContacts() {
     return contacts.value.filter((contact: Contact) =>
       // Suche in Namen (API verwendet givenName/familyName)
       `${contact.givenName || ''} ${contact.familyName || ''}`.toLowerCase().includes(query) ||
-      // Suche in Telefonnummern (API verwendet value statt number)
-      contact.phoneNumbers?.some(phone => phone.value?.includes(query)) ||
-      // Suche in E-Mails (API verwendet value statt address)
+      // Suche in Telefonnummern (API verwendet value)
+      contact.phoneNumbers?.some(phone => phone.value?.toLowerCase().includes(query)) ||
+      // Suche in E-Mails (API verwendet value)
       contact.emailAddresses?.some(email => email.value?.toLowerCase().includes(query))
     );
   });
@@ -47,22 +47,12 @@ export function useContacts() {
     return contacts.value.find((contact: Contact) => contact.id === id);
   };
 
-  // Für createContact definieren wir eine einfache Interface direkt hier
-  interface ContactFormData {
-    givenName: string;
-    familyName: string;
-    phoneNumbers?: Array<{ label?: string; value: string; }>;
-    emailAddresses?: Array<{ label?: string; value: string; }>;
-    birthday?: { day: number; month: number; year?: number; };
-    note?: string;
-  }
-
-  const createContact = async (contactData: ContactFormData): Promise<void> => {
+  const createContact = async (contactData: Partial<Contact>): Promise<void> => {
     try {
       const createOptions: CreateContactOptions = {
         contact: {
-          givenName: contactData.givenName,
-          familyName: contactData.familyName,
+          givenName: contactData.givenName || '',
+          familyName: contactData.familyName || '',
           phoneNumbers: contactData.phoneNumbers || [],
           emailAddresses: contactData.emailAddresses || [],
           birthday: contactData.birthday,
@@ -81,7 +71,7 @@ export function useContacts() {
     }
   };
 
-  const updateContact = async (id: string, contactData: Partial<ContactFormData>): Promise<void> => {
+  const updateContact = async (id: string, contactData: Partial<Contact>): Promise<void> => {
     try {
       // Hinweis: Das Plugin hat möglicherweise keine direkte Update-Funktion
       // Prüfe die Plugin-Dokumentation für die verfügbaren Methoden
@@ -119,8 +109,6 @@ export function useContacts() {
     createContact,
     updateContact,
     deleteContact,
-    setSearchQuery,
-    // Export der ContactFormData Interface für externe Nutzung
-    type: {} as ContactFormData
+    setSearchQuery
   };
 }
