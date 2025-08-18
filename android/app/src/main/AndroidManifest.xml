@@ -36,6 +36,28 @@
     </application>
 
     <!-- Permissions -->
-
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- Kontakte-Berechtigungen -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    
+    <!-- Telefon-Berechtigungen -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    
+    <!-- Optional: für bessere Telefon-Integration -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    
+    <!-- Intent-Filter für E-Mail und Telefon -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="tel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mailto" />
+        </intent>
+    </queries>
+
 </manifest>
